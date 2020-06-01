@@ -1,0 +1,53 @@
+.status-red {
+    -fx-background-color:rgba(128,0,0,0.7);
+}
+
+.status-light-red{
+    -fx-background-color: rgba(255,128,192,0.7);
+}
+.status-green {
+    -fx-background-color:rgba(0,128,0,0.7);
+}
+.status-blue {
+    -fx-background-color:rgba(0,0,128,0.7);
+}
+.status-light-blue {
+    -fx-background-color:rgba(128,255,255,0.7);
+}
+
+.status-yellow{
+    -fx-background-color:rgba(255,255,0,0.7);
+}
+
+.status-orange{
+    -fx-background-color:rgba(255,128,0,0.7);
+}
+
+.status-purple{
+    -fx-background-color:rgba(128,0,255,0.7);
+}
+
+.status-gold{
+    -fx-background-color:rgba(128,128,0,0.7);
+}
+
+.status-silver{
+    -fx-background-color:rgba(128,128,128,0.7);
+}
+
+.status-brown{
+    -fx-background-color:rgba(128,64,0,0.7);
+}
+
+.status-11{
+    -fx-background-color:rgba(128,64,64,0.7);
+}
+.status-12{
+    -fx-background-color:rgba(0,128,64,0.7);
+}
+.status-13{
+    -fx-background-color:rgba(64,0,64,0.7);
+}
+.status-14{
+    -fx-background-color:rgba(64,64,64,0.7);
+}

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+
+<AnchorPane id="AnchorPane" prefHeight="574.0" prefWidth="774.0" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gahh_scheduling_js.FXMLDocumentController">
+    <children>
+      <Button fx:id="btnBrowseFile" layoutX="276.0" layoutY="32.0" mnemonicParsing="false" onAction="#handleBrowseFileClick" prefWidth="92.0" text="Browse" />
+      <Label fx:id="labelDuration" layoutX="44.0" layoutY="510.0" text="Total time ellapsed" />
+      <TextField fx:id="filePathTextField" layoutX="31.0" layoutY="32.0" prefHeight="25.0" prefWidth="238.0" />
+      <TableView fx:id="jobDataTable" layoutX="31.0" layoutY="100.0" prefHeight="169.0" prefWidth="305.0">
+        <columns>
+            <TableColumn prefWidth="62.0" text="Job Num" />
+          <TableColumn prefWidth="102.0" text="Release Date" />
+          <TableColumn prefWidth="68.0" text="Due Date" />
+            <TableColumn prefWidth="75.0" text="Weight" />
+        </columns>
+      </TableView>
+      <TableView fx:id="oprDataTable" layoutX="416.0" layoutY="100.0" prefHeight="169.0" prefWidth="311.0" />
+      <Label layoutX="31.0" layoutY="77.0" text="Job data" />
+      <Label layoutX="416.0" layoutY="77.0" text="Operation data" />
+      <TextArea fx:id="textAreaSchedule" layoutX="216.0" layoutY="323.0" prefHeight="185.0" prefWidth="531.0" />
+      <Button fx:id="btnGenSched" layoutX="44.0" layoutY="446.0" mnemonicParsing="false" onAction="#handleGenerateScheduleClick" text="Generate Schedule" />
+      <TextField fx:id="crossoverProb" layoutX="150.0" layoutY="323.0" prefHeight="25.0" prefWidth="45.0" />
+      <Label layoutX="31.0" layoutY="327.0" text="Crossover probability" />
+      <Label layoutX="33.0" layoutY="356.0" text="Mutation probability" />
+      <TextField fx:id="mutationProb" layoutX="150.0" layoutY="352.0" prefHeight="25.0" prefWidth="45.0" />
+      <TextField fx:id="genCount" layoutX="150.0" layoutY="381.0" prefHeight="25.0" prefWidth="45.0" />
+      <Label layoutX="31.0" layoutY="385.0" text="generation count" />
+      <Button fx:id="btnGant" layoutX="216.0" layoutY="518.0" mnemonicParsing="false" onAction="#generateGanttChart" text="View Gantt Chart" />
+      <TextField fx:id="popSize" layoutX="150.0" layoutY="411.0" prefHeight="25.0" prefWidth="45.0" />
+      <Label layoutX="31.0" layoutY="415.0" text="population size" />
+   </children>
+</AnchorPane>
