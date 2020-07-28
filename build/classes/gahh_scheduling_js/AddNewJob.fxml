@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane id="AnchorPane" prefHeight="396.0" prefWidth="383.0" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gahh_scheduling_js.AddNewJobController">
+   <children>
+      <Label layoutX="125.0" layoutY="14.0" text="Add New Job">
+         <font>
+            <Font name="System Bold" size="21.0" />
+         </font>
+      </Label>
+      <Label layoutX="14.0" layoutY="63.0" text="Release Date (s)">
+         <font>
+            <Font size="14.0" />
+         </font>
+      </Label>
+      <TextField fx:id="TfNewReleaseDate" layoutX="158.0" layoutY="60.0" prefHeight="25.0" prefWidth="200.0" />
+      <Label layoutX="14.0" layoutY="94.0" text="Due Date (s)">
+         <font>
+            <Font size="14.0" />
+         </font>
+      </Label>
+      <TextField fx:id="TfNewDueDate" layoutX="158.0" layoutY="91.0" prefHeight="25.0" prefWidth="200.0" />
+      <Label layoutX="14.0" layoutY="128.0" text="Processing Time (s)">
+         <font>
+            <Font size="14.0" />
+         </font>
+      </Label>
+      <TextArea layoutX="158.0" layoutY="128.0" prefHeight="103.0" prefWidth="200.0" />
+      <Label layoutX="14.0" layoutY="240.0" text="Machine assignment(s)">
+         <font>
+            <Font size="14.0" />
+         </font>
+      </Label>
+      <TextArea layoutX="158.0" layoutY="240.0" prefHeight="103.0" prefWidth="200.0" />
+      <Button layoutX="156.0" layoutY="352.0" mnemonicParsing="false" text="Add Job">
+         <font>
+            <Font size="14.0" />
+         </font>
+      </Button>
+   </children>
+</AnchorPane>

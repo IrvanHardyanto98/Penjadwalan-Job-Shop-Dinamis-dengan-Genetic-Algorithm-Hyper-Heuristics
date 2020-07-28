@@ -26,13 +26,25 @@ import javafx.stage.Stage;
 import jss.Problem;
 import gahh.*;
 import gahh_scheduling_js.GanttChart.ExtraData;
+import java.util.ArrayList;
+import gahh.Schedule.Node;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Random;
 import javafx.collections.FXCollections;
+import javafx.concurrent.Worker;
+import javafx.concurrent.Worker.State;
+import javafx.concurrent.WorkerStateEvent;
+import javafx.event.EventHandler;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 import javafx.stage.Window;
@@ -47,8 +59,13 @@ public class FXMLDocumentController implements Initializable {
     private Alert fileFormatAlert;
     private Alert gahhParamAlert;
     private GAHH gahh;
+    private GAHHService service;
+    private GraphicsContext conMachine;
+    private GraphicsContext conSchedule;
     private Problem problem;
     private String[] statusColor;
+
+    private Schedule bestSchedule;
     
     @FXML
     private Label labelDuration;
@@ -60,10 +77,16 @@ public class FXMLDocumentController implements Initializable {
     private Button btnGenSched;
     
     @FXML
-    private TableView<String> jobDataTable;
-
+    private Button btnNewJob;
+    
     @FXML
-    private TableView<String> oprDataTable;
+    private Button btnStopScheduling;
+    
+    @FXML
+    private Button btnNewJobDialog;
+    
+    @FXML
+    private TableView<String> jobDataTable;
     
     @FXML
     private TextField filePathTextField;
@@ -84,6 +107,15 @@ public class FXMLDocumentController implements Initializable {
     private TextArea textAreaSchedule;
     
     @FXML
+    private ProgressBar progress;
+    
+    @FXML
+    private Canvas cnvSchedule;
+    
+    @FXML
+    private Canvas cnvMachine;
+    
+    @FXML
     private void handleBrowseFileClick(ActionEvent event) {
         this.inputFile = null;
         this.problem = null;
@@ -99,6 +131,7 @@ public class FXMLDocumentController implements Initializable {
     
     @FXML
     private void handleGenerateScheduleClick(ActionEvent event){
+        this.service.reset();
         this.textAreaSchedule.clear();
         this.labelDuration.setText("GAHH process started");
         if(this.inputFile==null){
@@ -111,31 +144,7 @@ public class FXMLDocumentController implements Initializable {
             this.problem = new Problem();
             long start = System.currentTimeMillis();
             problem.readProblem(this.inputFile.getPath());
-            //System.out.println(problem.toString());
-            
-            
-//            Schedule sched = new Schedule(problem);
-//            Random rand=new Random();
-            int[] chromosome = new int[problem.getJmlJob()*problem.getJmlMesin()];
-            
-            chromosome[0]=1;
-            chromosome[1]=5;
-            chromosome[2]=3;
-            chromosome[3]=2;
-            chromosome[4]=4;
-            chromosome[5]=3;
-            chromosome[6]=1;
-            chromosome[7]=2;
-            chromosome[8]=5;
-            chromosome[9]=4;
-            chromosome[10]=3;
-            chromosome[11]=1;
-            
-            Individual testIndividual = new Individual(chromosome);
 
-//            sched.generateSchedule(testIndividual);
-//            
-//            this.textAreaSchedule.setText(sched.toString());
             String strCProb = this.crossoverProb.getText().trim();
             String strMProb = this.mutationProb.getText().trim();
             String genCount = this.genCount.getText().trim();
@@ -165,7 +174,15 @@ public class FXMLDocumentController implements Initializable {
                 float mProb = Float.parseFloat(this.mutationProb.getText().trim());
                 int gen = Integer.parseInt(this.genCount.getText().trim());
                 int popSize =Integer.parseInt(strPopSize);
-                this.executeGAHH(this.problem,popSize,cProb,mProb,gen);
+                //this.executeGAHH(this.problem,popSize,cProb,mProb,gen);
+                //GAHHService service = new GAHHService(popSize, gen, cProb, mProb, problem);
+                
+                this.service.setParam(popSize, gen, cProb, mProb, problem);
+                if(!this.service.isRunning()){
+                    this.service.start();
+                }else{
+                    System.out.println("Service is still running!");
+                }
             }
         }
 
@@ -220,6 +237,8 @@ public class FXMLDocumentController implements Initializable {
     }
 
     public void generateGanttChart(){
+        Schedule sch = this.service.getValue();
+        this.getGanttChart(sch, this.problem);
         String[] row;
         String[] col;
         if(this.textAreaSchedule.getText()!=null){
@@ -274,6 +293,54 @@ public class FXMLDocumentController implements Initializable {
         }
     }
     
+    /**
+     * Method ini berfungsi untuk menggambar gantt chart pada canvas
+     * @author: Irvan Hardyanto, dengan referensi dari dokumen skripsi "Pembangunan Simulator Penjadwalan Flow Shop"
+     */
+    private void getGanttChart(Schedule sch,Problem prob){
+        int makespan = sch.getMakespan();
+        int jmlMesin = sch.getJmlMesin();
+        
+        double cnvScheduleWidth = this.cnvSchedule.getWidth();
+        double cnvScheduleHeight = this.cnvSchedule.getHeight();
+        
+        double x = 0;
+        double y = 0;
+        double blockHeight = cnvScheduleHeight/jmlMesin*1.0;
+        double blockWidth = 0;
+        
+        for (int i = 0; i < jmlMesin; i++) {
+            ArrayList<Schedule.Node>[] arr = sch.getSchedule();
+            ArrayList<Schedule.Node> machineSequence = arr[i];
+            
+            for (Schedule.Node node: machineSequence) {
+                int jobId = node.getOperationIdx()/jmlMesin;
+                
+                x = node.getStartTime()*(cnvScheduleWidth/makespan*1.0);
+                blockWidth = node.getProcessingTime()*(cnvScheduleWidth/makespan*1.0);
+                
+                this.conSchedule.setFill(prob.getJob(jobId).getColor());
+                this.conSchedule.fillRect(x,y,blockWidth,blockHeight);
+            }
+            y += blockHeight;
+            this.conMachine.fillText("Machine: "+(i+1), 0, y-(blockHeight/2));
+        }
+    }
+    @FXML
+    public void handleAddNewJob(ActionEvent event){
+        try{
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("AddNewJob.fxml"));
+        Parent root = loader.load();
+        Scene s = new Scene(root);
+        Stage stage = new Stage();
+        stage.setScene(s);
+        stage.setTitle("Add New Job");
+        stage.show();
+        }catch(IOException e){
+            e.printStackTrace();
+        }
+    }
+    
     private String getFileExtension(File f){
         int offset = f.getPath().lastIndexOf(".");
         return f.getPath().substring(offset);
@@ -282,10 +349,15 @@ public class FXMLDocumentController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         this.problem = null;
+        this.conMachine = this.cnvMachine.getGraphicsContext2D();
+        this.conSchedule = this.cnvSchedule.getGraphicsContext2D();
         this.fileChooser = new FileChooser();
         this.noFileSelectedAlert =new Alert(Alert.AlertType.ERROR, "No file selected!", ButtonType.CLOSE);
         this.fileFormatAlert =new Alert(Alert.AlertType.ERROR, "Wrong file format!", ButtonType.CLOSE);
         this.gahhParamAlert = new Alert(Alert.AlertType.ERROR);
+        this.service = new GAHHService();
+        this.service.setOnSucceeded(new GAHHServiceSucceededHandler(this.textAreaSchedule));
+        this.service.setOnRunning(new GAHHServiceRunningHandler(this.progress));
         this.statusColor = new String[15];
         this.statusColor[0] = "status-red";
         this.statusColor[1] = "status-light-red";

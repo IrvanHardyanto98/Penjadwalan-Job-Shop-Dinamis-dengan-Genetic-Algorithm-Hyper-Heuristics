@@ -1,39 +1,94 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.Group?>
+<?import javafx.scene.canvas.Canvas?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.text.Font?>
 
-<AnchorPane id="AnchorPane" prefHeight="574.0" prefWidth="774.0" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gahh_scheduling_js.FXMLDocumentController">
-    <children>
-      <Button fx:id="btnBrowseFile" layoutX="276.0" layoutY="32.0" mnemonicParsing="false" onAction="#handleBrowseFileClick" prefWidth="92.0" text="Browse" />
-      <Label fx:id="labelDuration" layoutX="44.0" layoutY="510.0" text="Total time ellapsed" />
-      <TextField fx:id="filePathTextField" layoutX="31.0" layoutY="32.0" prefHeight="25.0" prefWidth="238.0" />
-      <TableView fx:id="jobDataTable" layoutX="31.0" layoutY="100.0" prefHeight="169.0" prefWidth="305.0">
-        <columns>
-            <TableColumn prefWidth="62.0" text="Job Num" />
-          <TableColumn prefWidth="102.0" text="Release Date" />
-          <TableColumn prefWidth="68.0" text="Due Date" />
-            <TableColumn prefWidth="75.0" text="Weight" />
-        </columns>
-      </TableView>
-      <TableView fx:id="oprDataTable" layoutX="416.0" layoutY="100.0" prefHeight="169.0" prefWidth="311.0" />
-      <Label layoutX="31.0" layoutY="77.0" text="Job data" />
-      <Label layoutX="416.0" layoutY="77.0" text="Operation data" />
-      <TextArea fx:id="textAreaSchedule" layoutX="216.0" layoutY="323.0" prefHeight="185.0" prefWidth="531.0" />
-      <Button fx:id="btnGenSched" layoutX="44.0" layoutY="446.0" mnemonicParsing="false" onAction="#handleGenerateScheduleClick" text="Generate Schedule" />
-      <TextField fx:id="crossoverProb" layoutX="150.0" layoutY="323.0" prefHeight="25.0" prefWidth="45.0" />
-      <Label layoutX="31.0" layoutY="327.0" text="Crossover probability" />
-      <Label layoutX="33.0" layoutY="356.0" text="Mutation probability" />
-      <TextField fx:id="mutationProb" layoutX="150.0" layoutY="352.0" prefHeight="25.0" prefWidth="45.0" />
-      <TextField fx:id="genCount" layoutX="150.0" layoutY="381.0" prefHeight="25.0" prefWidth="45.0" />
-      <Label layoutX="31.0" layoutY="385.0" text="generation count" />
-      <Button fx:id="btnGant" layoutX="216.0" layoutY="518.0" mnemonicParsing="false" onAction="#generateGanttChart" text="View Gantt Chart" />
-      <TextField fx:id="popSize" layoutX="150.0" layoutY="411.0" prefHeight="25.0" prefWidth="45.0" />
-      <Label layoutX="31.0" layoutY="415.0" text="population size" />
+<AnchorPane prefHeight="700.0" prefWidth="900.0" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gahh_scheduling_js.FXMLDocumentController">
+   <children>
+      <TabPane prefHeight="700.0" prefWidth="900.0" tabClosingPolicy="UNAVAILABLE">
+        <tabs>
+          <Tab text="Problem Input">
+               <content>
+                  <AnchorPane id="AnchorPane" prefHeight="459.0" prefWidth="702.0">
+                      <children>
+                        <Group layoutX="447.0" layoutY="154.0">
+                           <children>
+                              <Label text="GAHH Parameter" />
+                              <Region layoutY="17.0" prefHeight="292.0" prefWidth="302.0" style="-fx-border-color: rgb(125,125,125); -fx-border-width: 2 em;" />
+                              <Label layoutX="14.0" layoutY="37.0" text="Crossover probability" />
+                              <Label layoutX="14.0" layoutY="68.0" text="Mutation probability" />
+                              <Label layoutX="14.0" layoutY="101.0" text="Generation count" />
+                              <TextField fx:id="crossoverProb" layoutX="144.0" layoutY="33.0" prefHeight="25.0" prefWidth="144.0" />
+                              <Label layoutX="14.0" layoutY="131.0" text="Population size" />
+                              <TextField fx:id="mutationProb" layoutX="144.0" layoutY="64.0" prefHeight="25.0" prefWidth="144.0" />
+                              <TextField fx:id="genCount" layoutX="144.0" layoutY="97.0" prefHeight="25.0" prefWidth="144.0" />
+                              <TextField fx:id="popSize" layoutX="144.0" layoutY="127.0" prefHeight="25.0" prefWidth="144.0" />
+                              <Button fx:id="btnGenSched" layoutX="67.0" layoutY="174.0" mnemonicParsing="false" onAction="#handleGenerateScheduleClick" prefHeight="35.0" prefWidth="168.0" style="-fx-background-color: rgb(0,128,0);" text="Start Scheduling" textFill="WHITE">
+                                 <font>
+                                    <Font name="System Bold" size="12.0" />
+                                 </font>
+                              </Button>
+                              <Button fx:id="btnNewJobDialog" layoutX="67.0" layoutY="219.0" mnemonicParsing="false" onAction="#handleAddNewJob" prefHeight="35.0" prefWidth="168.0" text="Add New Job" />
+                              <Button fx:id="btnStopScheduling" layoutX="67.0" layoutY="263.0" mnemonicParsing="false" prefHeight="35.0" prefWidth="168.0" style="-fx-background-color: rgb(255,0,0);" text="Stop Scheduling" textFill="WHITE" />
+                           </children>
+                        </Group>
+                        <Group layoutX="104.0" layoutY="99.0">
+                           <children>
+                              <Region prefHeight="46.0" prefWidth="645.0" style="-fx-border-color: rgb(125,125,125); -fx-border-width: 2 em;" />
+                              <TextField fx:id="filePathTextField" layoutX="14.0" layoutY="11.0" prefHeight="25.0" prefWidth="463.0" />
+                              <Button fx:id="btnBrowseFile" layoutX="487.0" layoutY="11.0" mnemonicParsing="false" onAction="#handleBrowseFileClick" prefHeight="25.0" prefWidth="144.0" text="Browse" />
+                           </children>
+                        </Group>
+                        <Group layoutX="104.0" layoutY="154.0">
+                           <children>
+                              <Region layoutY="17.0" prefHeight="292.0" prefWidth="331.0" style="-fx-border-color: rgb(125,125,125); -fx-border-width: 2 em;" />
+                              <Label text="Job data" />
+                              <TableView fx:id="jobDataTable" layoutX="15.0" layoutY="34.0" prefHeight="259.0" prefWidth="302.0">
+                                <columns>
+                                    <TableColumn prefWidth="63.0" text="Job Num" />
+                                  <TableColumn prefWidth="84.0" text="Release Date" />
+                                  <TableColumn prefWidth="64.0" text="Due Date" />
+                                    <TableColumn prefWidth="90.0" text="Jml Operation" />
+                                </columns>
+                              </TableView>
+                           </children>
+                        </Group>
+                        <Label layoutX="104.0" layoutY="82.0" text="File Input" />
+                        <Group layoutX="104.0" layoutY="480.0">
+                           <children>
+                              <ProgressBar fx:id="progress" prefHeight="18.0" prefWidth="645.0" progress="0.0" />
+                              <Label fx:id="labelDuration" layoutY="16.0" text="Total time ellapsed" />
+                           </children>
+                        </Group>
+                     </children>
+                  </AnchorPane>
+               </content>
+            </Tab>
+          <Tab text="Schedule">
+               <content>
+                  <AnchorPane prefHeight="200.0" prefWidth="200.0">
+                     <children>
+                        <TextArea fx:id="textAreaSchedule" layoutX="14.0" layoutY="20.0" prefHeight="136.0" prefWidth="279.0" />
+                        <Button fx:id="btnGant" layoutX="14.0" layoutY="167.0" mnemonicParsing="false" onAction="#generateGanttChart" text="View Gantt Chart" />
+                        <Canvas fx:id="cnvSchedule" height="458.0" layoutX="121.0" layoutY="200.0" width="762.0" />
+                        <Canvas fx:id="cnvMachine" height="458.0" layoutX="43.0" layoutY="200.0" width="77.0" />
+                     </children>
+                  </AnchorPane>
+               </content>
+            </Tab>
+        </tabs>
+      </TabPane>
    </children>
 </AnchorPane>

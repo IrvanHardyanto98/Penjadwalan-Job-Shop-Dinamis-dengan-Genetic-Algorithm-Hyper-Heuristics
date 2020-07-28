@@ -4,7 +4,10 @@ import jss.*;
 import java.util.Arrays;
 import java.util.Random;
 
-//7 method utama
+/**
+ * @author Irvan Hardyanto
+ * NPM: 2016730070
+ */
 public class GAHH {
 
     private int populationSize;
@@ -15,7 +18,7 @@ public class GAHH {
     private float crossoverProb;
     private float mutationProb;
     private Problem problem;
-    private Schedule schedule;
+    private ScheduleGenerator scheduleGenerator;
 
     public GAHH(Problem problem, int populationSize, float crossoverProb, float mutationProb, int maximumGeneration) {
         this.populationSize = populationSize;
@@ -24,24 +27,31 @@ public class GAHH {
         this.crossoverProb = crossoverProb;
         this.mutationProb = mutationProb;
         this.problem = problem;
-        this.schedule = new Schedule(problem);
+        this.scheduleGenerator = new ScheduleGenerator(problem);
         this.currentGeneration = 0;
         this.maximumGeneration = maximumGeneration;
     }
 
+    public int getMaxGeneration(){
+        return this.maximumGeneration;
+    }
     /**
      * inisialisasi populasi awal secara random
      */
     public Population initPopulation(int chromosomeLength) {
+        System.out.println("initPopulation start");
         Population population = new Population(this.populationSize, chromosomeLength);
+        System.out.println("popSize: "+this.populationSize);
+        System.out.println("chromoLen: "+chromosomeLength);
         Random rnd = new Random();
         for (int i = 0; i < this.populationSize; i++) {
-            int len = population.getIndividual(i).getChromosomeLength();
-            for (int j = 0; j < len; j++) {
+            for (int j = 0; j < chromosomeLength; j++) {
                 int gene = rnd.nextInt(5) + 1;
                 population.getIndividual(i).setGene(j, gene);
             }
+            System.out.println("finalChromoLen: "+population.getIndividual(i).getChromosomeLength());
         }
+        System.out.println("initPopulation done");
         return population;
     }
 
@@ -49,17 +59,20 @@ public class GAHH {
     //fitness function
     //hitung fitness sesuai kategori penjadwalan (makespan dan mean tardiness)
     public double calcFitness(Individual individual) {
+        System.out.println("calc fitness started");
         double fitness;
-        this.schedule.generateSchedule(individual);
+        Schedule sch = this.scheduleGenerator.generateSchedule(individual);
 
         //System.out.println("Calculating Individual Fitness");
         //System.out.println("Schedule generated for this individual: ");
         //System.out.println(this.schedule.toString());
         
-        fitness = 0.5 * this.schedule.getMakespan() + 0.5 * this.schedule.getMeanTardiness();
+        fitness = 0.5 * sch.getMakespan() + 0.5 * sch.getMeanTardiness();
         
         //System.out.println("Individual fitness value: " + fitness);
         individual.setFitness(fitness);
+        individual.setSchedule(sch);
+        System.out.println("calc fitness done, fitness: "+fitness);
         return fitness;
     }
 
@@ -68,10 +81,12 @@ public class GAHH {
     }
 
     public void evalPopulation(Population population) {
+        System.out.println("evaluating population started");
         double populationFitness = 0;
         for (Individual individual : population.getIndividuals()) {
             populationFitness += calcFitness(individual);
         }
+        System.out.println("evaluating population done");
         population.setPopulationFitness(populationFitness);
     }
 
