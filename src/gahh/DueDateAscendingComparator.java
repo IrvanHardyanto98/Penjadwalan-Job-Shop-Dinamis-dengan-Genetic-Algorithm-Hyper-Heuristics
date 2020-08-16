@@ -4,8 +4,9 @@ import jss.Job;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import javafx.util.Pair;
 
-public class DueDateAscendingComparator implements Comparator<Operation>{
+public class DueDateAscendingComparator implements Comparator<Pair<Integer,Operation>>{
 	private HashMap<Integer,Job> job;
 	
 	public DueDateAscendingComparator(HashMap<Integer,Job> job){
@@ -13,10 +14,10 @@ public class DueDateAscendingComparator implements Comparator<Operation>{
 	}
 	
 	@Override
-	public int compare(Operation o1, Operation o2){
-		if(this.job.get(o1.getJobId()).getDueDate() > this.job.get(o2.getJobId()).getDueDate()){
+	public int compare(Pair<Integer,Operation> o1, Pair<Integer,Operation> o2){
+		if(this.job.get(o1.getValue().getJobId()).getDueDate() > this.job.get(o2.getValue().getJobId()).getDueDate()){
 			return 1;
-		}else if(this.job.get(o1.getJobId()).getDueDate() < this.job.get(o2.getJobId()).getDueDate()){
+		}else if(this.job.get(o1.getValue().getJobId()).getDueDate() < this.job.get(o2.getValue().getJobId()).getDueDate()){
 			return -1;
 		}
 				return 0;

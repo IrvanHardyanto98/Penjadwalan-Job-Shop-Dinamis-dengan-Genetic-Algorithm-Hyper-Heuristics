@@ -6,6 +6,7 @@
 package gahh_scheduling_js;
 import gahh.GAHH;
 import gahh.Schedule;
+import gahh.ScheduleGenerator;
 import gahh.Individual;
 import gahh.Population;
 import javafx.concurrent.Task;
@@ -20,7 +21,7 @@ public class GAHHTask extends Task<Schedule>{
     
     public GAHHTask(Problem problem,int populationSize,float crossoverProb, float mutationProb,int maxGeneration){
         this.problem =problem;
-        this.gahh = new GAHH(problem,populationSize,crossoverProb,mutationProb,maxGeneration);
+        this.gahh = new GAHH(new ScheduleGenerator(problem),populationSize,crossoverProb,mutationProb,maxGeneration);
     }
     public void succeeded(){
         super.succeeded();

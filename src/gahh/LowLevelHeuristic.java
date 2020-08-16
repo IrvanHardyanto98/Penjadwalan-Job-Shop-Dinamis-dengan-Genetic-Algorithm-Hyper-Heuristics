@@ -5,12 +5,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import javafx.util.Pair;
 /**
  * @author Irvan Hardyanto (2016730070)
  */
 //low level heuristic yang dinyatakan oleh integer tertentu
 public class LowLevelHeuristic{	
-	public void orderOperation(ArrayList<Operation> operations,HashMap<Integer,Job> jobMap,int llh){
+	public void orderOperation(ArrayList<Pair<Integer,Operation>> operations,HashMap<Integer,Job> jobMap,int llh){
 		switch(llh){
 			case 1:
 				//System.out.println("Minimum Release Time");
@@ -19,12 +20,12 @@ public class LowLevelHeuristic{
 				break;
 			case 2:
 				//System.out.println("Shortest Processing Time");
-				Collections.sort(operations,new Comparator<Operation>(){
+				Collections.sort(operations,new Comparator<Pair<Integer,Operation>>(){
 					@Override
-					public int compare(Operation o1,Operation o2){
-						if(o1.getProcTime() > o2.getProcTime()){
+					public int compare(Pair<Integer,Operation> o1,Pair<Integer,Operation> o2){
+						if(o1.getValue().getProcTime() > o2.getValue().getProcTime()){
 							return 1;
-						}else if(o1.getProcTime() < o2.getProcTime()){
+						}else if(o1.getValue().getProcTime() < o2.getValue().getProcTime()){
 							return -1;
 						}
 						return 0;
@@ -33,12 +34,12 @@ public class LowLevelHeuristic{
 				break;
 			case 3:
 				//System.out.println("Longest Processing Time");
-				Collections.sort(operations,new Comparator<Operation>(){
+				Collections.sort(operations,new Comparator<Pair<Integer,Operation>>(){
 					@Override
-					public int compare(Operation o1,Operation o2){
-						if(o1.getProcTime() > o2.getProcTime()){
+					public int compare(Pair<Integer,Operation> o1,Pair<Integer,Operation> o2){
+						if(o1.getValue().getProcTime() > o2.getValue().getProcTime()){
 							return -1;
-						}else if(o1.getProcTime() < o2.getProcTime()){
+						}else if(o1.getValue().getProcTime() < o2.getValue().getProcTime()){
 							return 1;
 						}
 						return 0;

@@ -2,13 +2,13 @@ package jss;
 
 public class Operation{
 	private int jobId;
-	private int operationId;
+	private int oprOrderNum;
 	private int procTime;
 	private int machineNum;//machine num nilainya 0 s/d m-1
 	
-	public Operation(int jobId,int operationId,int procTime,int machineNum){
+	public Operation(int jobId,int oprOrderNum,int procTime,int machineNum){
 		this.jobId = jobId;
-		this.operationId = operationId;
+		this.oprOrderNum = oprOrderNum;
 		this.procTime = procTime;
 		this.machineNum = machineNum;
 	}
@@ -21,8 +21,8 @@ public class Operation{
 		return this.procTime;
 	}
 	
-	public int getOperationId(){
-		return this.operationId;
+	public int getOprOrderNum(){
+		return this.oprOrderNum;
 	}
 	
 	public int getJobId(){

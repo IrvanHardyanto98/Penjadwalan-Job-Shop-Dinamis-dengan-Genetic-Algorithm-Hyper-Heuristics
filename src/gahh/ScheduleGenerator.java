@@ -8,6 +8,11 @@ package gahh;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
+import javafx.util.Pair;
+import jss.Job;
 import jss.Operation;
 import jss.Problem;
 
@@ -17,16 +22,25 @@ import jss.Problem;
  */
 public class ScheduleGenerator {
     private Problem problem;
-    private ArrayList<Integer> jobFinishTime;
+    private HashMap<Integer,Integer> jobFinishTime;
     private int[] machineFinishTime;
     
     public ScheduleGenerator(Problem problem){
         this.problem = problem;
-        this.jobFinishTime = new ArrayList<>(this.problem.getJmlJob());
-        for (int i = 0; i < this.problem.getJmlJob(); i++) {
-            this.jobFinishTime.add(i,0);
+        this.jobFinishTime = new HashMap<>(this.problem.getJmlJob());
+        for (Map.Entry<Integer,Job> entry: this.problem.getJobMap().entrySet()) {
+            this.jobFinishTime.put(entry.getKey(),0);
         }
         this.machineFinishTime = new int[this.problem.getJmlMesin()];
+    }
+    
+    public ScheduleGenerator(Problem problem,int[] machineFinishTime){
+        this.problem = problem;
+        this.jobFinishTime = new HashMap<>(this.problem.getJmlJob());
+        for (Map.Entry<Integer,Job> entry: this.problem.getJobMap().entrySet()) {
+            this.jobFinishTime.put(entry.getKey(),0);
+        }
+        this.machineFinishTime = machineFinishTime;
     }
     
     public Schedule generateSchedule(Individual individual) {  
@@ -39,35 +53,17 @@ public class ScheduleGenerator {
         System.out.println("machineNum :"+ machineNum);
         
         Schedule schedule = new Schedule(machineNum);
-//        this.jobFinishTime = new ArrayList<>(jobNum);
-//        this.machineFinishTime = new int[machineNum];
 
         LowLevelHeuristic llh = new LowLevelHeuristic();        
         
-        System.out.println("copy aL start");
-        ArrayList<Integer> remainingOperation = new ArrayList<>(this.problem.getRemainingOpr());
-        //Collections.copy(remainingOperation, this.problem.getRemainingOpr());
-        System.out.println("copy aL done");
         ArrayList<Integer> chromosome = individual.getChromosome();
-
-        //inisialisasi
-//        for (int i = 0; i < jobNum; i++) {
-//            currentOperation[i] = 0;
-//        }
-
-        //inisialisasi finish time job
-        for (int i = 0; i < jobNum; i++) {
-            this.jobFinishTime.set(i,0);
-        }
-        System.out.println("init job finish time done");
-        //inisialisasi finish time machine
-        for(int i=0;i<machineNum;i++){
-            this.machineFinishTime[i] = 0;
-        }
-        System.out.println("init machine finish time done");
+        
+        this.jobFinishTime = new HashMap<>(this.problem.getJobFinishTime());
+        this.machineFinishTime = this.problem.getSetupTime();
+        HashMap<Integer,Integer> remainingOperation = new HashMap<>(this.problem.getRemainingOpr());
+        
         //cari operation yang schedulable
-        ArrayList<Operation> schedulableOperations = new ArrayList<>();
-        System.out.println();
+        ArrayList<Pair<Integer,Operation>> schedulableOperations = new ArrayList<>();
         
         //baris ini mengasumsikan jumlah operation setiap job selalu sama dengan jumlah mesin
         //pada kasus dinamis, hal ini tidak selalu terpenuhi.
@@ -79,13 +75,16 @@ public class ScheduleGenerator {
             int currLLH = individual.getGene(i);
             
              //masalah baru... job nya bisa saja tidak urut
-            for (int jobIdx = 0; jobIdx < jobNum; jobIdx++) {
-                int sisaOpr = remainingOperation.get(jobIdx);
+            for (Map.Entry<Integer,Job> entry: this.problem.getJobMap().entrySet()) {
+                int jobId = entry.getKey();
+                int sisaOpr = remainingOperation.get(jobId);
                 
                 if(sisaOpr > 0){
-                    int oprIdx = this.problem.getJob(jobIdx).getOperationIdx(machineNum - sisaOpr);
+                    int jmlTotOpr = this.problem.getJob(jobId).getOperationNum();
+                    int oprIdx = this.problem.getJob(jobId).getOperationIdx(jmlTotOpr- sisaOpr);
+                    
                     Operation opr = this.problem.getOperation(oprIdx);
-                    schedulableOperations.add(opr);
+                    schedulableOperations.add(new Pair(oprIdx,opr));
                 }
 //                if(opNum<machineNum){
 //                    int oprIdx = this.problem.getJob(jobIdx).getOperationIdx(opNum);
@@ -96,18 +95,16 @@ public class ScheduleGenerator {
             System.out.println("sort schedulable start");
             llh.orderOperation(schedulableOperations, this.problem.getJobMap(), currLLH);
             System.out.println("sort schedulable done");
-            
-            Operation currOpr = schedulableOperations.get(0);
-
+            Pair<Integer,Operation> currOpr = schedulableOperations.get(0);
             if (!this.put(schedule,currOpr)) {
                 //System.out.println("Warning! Operation : " + currOpr.getOperationId() + " job: " + currOpr.getJobId() + " IS NOT succesfully put into schedule at machine: " + currOpr.getMachineNum());
             }else{
                 //System.out.println("Operation : " + currOpr.getOperationId() + " job: " + currOpr.getJobId() + " succesfully put into schedule at machine: " + currOpr.getMachineNum());
             }
             //System.out.println();
-            int tmp = remainingOperation.get(currOpr.getJobId());
+            int tmp = remainingOperation.get(currOpr.getValue().getJobId());
             tmp--;
-            remainingOperation.set(currOpr.getJobId(),tmp);
+            remainingOperation.replace(currOpr.getValue().getJobId(),tmp);
             schedulableOperations.clear();
         }
         
@@ -141,16 +138,17 @@ private int countOperationStartTime(Operation opr){
      */
 
     //setiap operation pada job dikerjakan pada machine yang berbeda!
-    private boolean put(Schedule schedule,Operation currOpr) {
+    private boolean put(Schedule schedule,Pair<Integer,Operation> currOpr) {
         System.out.println("put opr start");
+        Operation opr = currOpr.getValue();
         //finish time mencatat waktu selesai setiap operation milik job
-        int machineId = currOpr.getMachineNum();
-        int jobId = currOpr.getJobId();
-        int oprId = currOpr.getOperationId();
+        int machineId = opr.getMachineNum();
+        int jobId = opr.getJobId();
+        int oprId = currOpr.getKey();
                
             //referensi buku baker
-            int start = this.countOperationStartTime(currOpr);
-            int end = start + currOpr.getProcTime();
+            int start = this.countOperationStartTime(opr);
+            int end = start + opr.getProcTime();
 
             //Node node = new Node(currOpr.getOperationId(), start, end);
 
@@ -159,16 +157,27 @@ private int countOperationStartTime(Operation opr){
             //this.schedule[machineId][col] = node;
            
             //this.freeCells[machineId]--;
-            this.jobFinishTime.set(jobId,end);
+            this.jobFinishTime.replace(jobId,end);
             this.machineFinishTime[machineId] = end;
             System.out.println("put opr done");
-            return schedule.addOperation(currOpr, start, end);
+            return schedule.addOperation(oprId,opr, start, end);
         
     }
     
     private int countMakespan(Schedule schedule) {
-        Collections.sort(this.jobFinishTime);
-        return this.jobFinishTime.get(this.jobFinishTime.size()-1);
+        ArrayList<Map.Entry<Integer,Integer>> values = new ArrayList<>(this.jobFinishTime.entrySet());
+        Collections.sort(values, new Comparator<Map.Entry<Integer,Integer>>(){
+            @Override
+            public int compare(Map.Entry<Integer, Integer> o1, Map.Entry<Integer, Integer> o2) {
+                if(o1.getValue() > o2.getValue()){
+                    return -1;
+                }else if(o1.getValue() < o2.getValue()){
+                    return 1;
+                }
+                return 0;
+            }
+        });
+        return values.get(0).getValue();
     }
     
     private double countMeanTardiness(Schedule schedule){

@@ -1,29 +1,38 @@
 package jss;
 
+import gahh.Schedule;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.FileReader; 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 
 public class Problem{
 	private int jmlJob;
 	private int jmlMesin;
 	private int makespan;
 	private float meanTardiness;
+        private Schedule bestSchedule;
+        private int[] setupTime;
 	private HashMap<Integer,Job> jobMap;
 	private HashMap<Integer,Operation> opMap;
-	private ArrayList<Integer> remainingOpr;
+	private HashMap<Integer,Integer> remainingOpr;
+        private HashMap<Integer,Integer> jobFinishTime;
         
 	public Problem(){
 		this.jmlJob=0;
 		this.jmlMesin=0;
 		this.makespan = Integer.MAX_VALUE;
 		this.meanTardiness= Float.MAX_VALUE;
-		this.opMap = null;
-		this.jobMap = null;
-                this.remainingOpr = null;
+		this.opMap = new HashMap<>();
+		this.jobMap = new HashMap<>();
+                this.remainingOpr = new HashMap<>();
+                this.setupTime=null;
+                this.bestSchedule = null;
+                this.jobFinishTime= new HashMap<>();
 	}
 	
 	public Problem(int jmlJob,int jmlMesin){
@@ -34,21 +43,41 @@ public class Problem{
 		this.opMap = new HashMap<>();
 		this.jobMap = new HashMap<>();
 	}
+        
+        public void setBestSchedule(Schedule schedule){
+            this.bestSchedule = schedule;
+        }
+        
+        public Schedule getBestSchedule(){
+            return this.bestSchedule;
+        }
 	
         public Operation getOperation(int oprIdx){
             return this.opMap.get(oprIdx);
+        }
+        
+        public void addOperation(int oprId,Operation operation){
+            this.opMap.put(oprId, operation);
         }
         
         public Job getJob(int jobId){
             return this.jobMap.get(jobId);
         }
         
+        public void addJob(int jobId,Job job){
+            this.jobMap.put(jobId,job);
+        }
+        
         public Integer getRemainingOpr(int jobId){
             return this.remainingOpr.get(jobId);
         }
         
-        public ArrayList<Integer> getRemainingOpr(){
+        public HashMap<Integer,Integer> getRemainingOpr(){
             return this.remainingOpr;
+        }
+        
+        public void setRemainingOpr(int jobId,int remainingOpr){
+            this.remainingOpr.put(jobId, remainingOpr);
         }
         
 	public int getJmlJob(){
@@ -78,7 +107,114 @@ public class Problem{
 	public HashMap<Integer,Job> getJobMap(){
 		return this.jobMap;
 	}
+        
+        public void setSetupTime(int[] setupTime){
+            this.setupTime = setupTime;
+        }
+        
+        public int getSetupTime(int machineId){
+            return this.setupTime[machineId];
+        }
+        
+        public int[] getSetupTime(){
+            return this.setupTime;
+        }
+        
+        public HashMap<Integer,Integer> getJobFinishTime(){
+            return this.jobFinishTime;
+        }
+        
+        public void setJobFinishTime(int jobId,int finishTime){
+            if(this.jobFinishTime.containsKey(jobId)){
+                this.jobFinishTime.replace(jobId,finishTime);
+            }else{
+                this.jobFinishTime.put(jobId,finishTime);
+            }
+        }
+        
+        public int getJobFinishTime(int jobId){
+            return this.jobFinishTime.get(jobId);
+        }
 	
+        //TODO!!!
+        //Tambahin jobFinishTime setiapJob yang belum beres
+        public Problem reschedule(int time,String[][] data){            
+            HashSet<Integer> tmp = this.bestSchedule.getRemainingOperation(time);
+            
+            Problem subProblem = new Problem();
+            int[] setupTime=this.bestSchedule.getSetupTime();
+            subProblem.setSetupTime(setupTime);
+            //tentukan job yang sudah selesai dan yang belum selesai
+            
+            //kalau kodenya seperti ini artinya iterasi semua job, dari awal sampai akhir,
+            //ada kemungkinan job yang sudah beres semua operasi nya di iterasi.
+            for (Map.Entry<Integer,Job> entry: this.jobMap.entrySet()) {
+                Job oldJob = entry.getValue();
+                Job newJob = new Job(oldJob.getReleaseDate(), oldJob.getDueDate(), oldJob.getOperationNum());           
+                boolean finished = true;
+                int remOpr = oldJob.getOperationNum();
+                int newReleaseDate= 0;
+                for (int j = 0; j < oldJob.getOperationNum(); j++) {
+                    if(tmp.contains(oldJob.getOperationIdx(j))){
+                        finished = false;
+                        //operation ini belum selesai, perbarui atribut remainingOperation
+                        //misalkan sebuah job punya empat operasi, kalau 
+                        //operasi kedua ada di daftar operasi yang belum selesai, maka operasi ketiga dan keempat
+                        //pasti ada di daftar tersebut.
+                        Operation oldOpr = this.opMap.get(oldJob.getOperationIdx(j));
+                        int jobId = oldOpr.getJobId();
+                        int oprOrd = oldOpr.getOprOrderNum();
+                        int machNum = oldOpr.getMachineNum();
+                        int procTime = oldOpr.getProcTime();
+                        subProblem.addOperation(oldJob.getOperationIdx(j),new Operation(jobId,oprOrd,procTime, machNum));
+                        newJob.setOperationIdx(j,oldJob.getOperationIdx(j));
+                    }else{
+                        //operation ini sudah selesai, hapus dari daftar operation
+                        subProblem.setJobFinishTime(entry.getKey(), this.bestSchedule.getFinishTime(oldJob.getOperationIdx(j))); 
+                        newJob.setOperationIdx(j,-1);
+                        remOpr--;
+                    }
+                }
+                if(!finished){
+                    //tambahkan job dan operation ke sub problem
+                    //hitung release date baru
+                    subProblem.addJob(entry.getKey(), newJob);
+                }
+                subProblem.setRemainingOpr(entry.getKey(), remOpr);
+            }
+            
+            //tambahkan job yang baru ditambahkan pada waktu time ke problem dan sub problem
+            for(int i = 0 ; i < data[0].length;i++){
+                int releaseDate = Integer.parseInt(data[0][i]);
+                int dueDate = Integer.parseInt(data[1][i]);
+                String[] splitProcTimes = data[2][i].split(",");
+                String[] splitMachineAssignment = data[3][i].split(",");
+            
+                Job newJob= new Job(releaseDate,dueDate,splitProcTimes.length);
+                
+                
+                int jobId = this.jmlJob*this.jmlMesin;
+                for(int j = 0 ;j < splitProcTimes.length;j++){
+                    int oprId = jobId+j;
+                    int procTime = Integer.parseInt(splitProcTimes[j]);
+                    int machineId = Integer.parseInt(splitMachineAssignment[j]);
+                    
+                    Operation newOperation = new Operation(jobId, oprId, procTime, machineId);
+                    
+                    subProblem.addOperation(oprId,newOperation);
+                    this.addOperation(oprId, newOperation);
+                    
+                    newJob.setOperationIdx(j, oprId);
+                }
+                this.jmlJob++;
+                
+                subProblem.addJob(jobId, newJob);
+                subProblem.setRemainingOpr(jobId, splitProcTimes.length);
+                subProblem.setJobFinishTime(jobId,0);
+                this.addJob(jobId, newJob);
+            }
+            return subProblem;
+        }
         //method ini hanya dipanggil sekali di awal !
 	public void readProblem(String fileName){
             System.out.println("readProblem start");
@@ -99,9 +235,11 @@ public class Problem{
 			                 System.out.println("jmlJob: "+this.jmlJob);
                                          System.out.println("jmlMesin: "+this.jmlMesin);
 			//inisialisasi data job dan operation
+                        this.setupTime=new int[this.jmlMesin];
 			this.jobMap = new HashMap<>(this.jmlJob);
 			this.opMap = new HashMap<>(this.jmlJob*this.jmlMesin);
-                        this.remainingOpr = new ArrayList<>(this.jmlJob);
+                        this.remainingOpr = new HashMap<>(this.jmlJob);
+                        this.jobFinishTime=new HashMap<>(this.jmlJob);
 			
 			br.readLine();
 			
@@ -145,7 +283,8 @@ public class Problem{
 				int dueDate = Integer.parseInt(lineSplit[1].trim());
 				
 				this.jobMap.put(jobIdx,new Job(releaseDate,dueDate,this.jmlMesin));
-                                this.remainingOpr.add(jobIdx,this.jmlMesin);
+                                this.remainingOpr.put(jobIdx,this.jmlMesin);
+                                this.jobFinishTime.put(jobIdx,0);
 			}
 			
 			//inisialisasi opList dan array operation pada setiap object job
@@ -157,9 +296,9 @@ public class Problem{
 					int opIdx = jobIdx + j;
 					int procTime = processingTime[i][j];
 					int machineNum = machineRout[i][j];
-					Operation operation = new Operation(i,opIdx,procTime,machineNum);
+					Operation operation = new Operation(i,j,procTime,machineNum);
 					
-					this.opMap.put(idx++, operation);
+					this.opMap.put(opIdx, operation);
                                         //this.opList[idx++] = operation;
                                         
 					this.jobMap.get(i).setOperationIdx(j,opIdx);
@@ -201,7 +340,7 @@ public class Problem{
             }
             str +="----------OPERATION DATA----------\n";
             for(int i = 0;i < this.opMap.size();i++){
-                str+="Operation id: "+this.opMap.get(i).getOperationId()+"\n";
+                str+="Operation id: "+this.opMap.get(i).getOprOrderNum()+"\n";
                 str+="Job id: "+this.opMap.get(i).getJobId()+"\n";
                 str+="Proc time: "+this.opMap.get(i).getProcTime()+"\n";
                 str+="Machine No: "+this.opMap.get(i).getMachineNum()+"\n";

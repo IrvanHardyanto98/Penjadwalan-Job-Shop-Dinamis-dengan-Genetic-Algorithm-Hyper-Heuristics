@@ -31,14 +31,14 @@
             <Font size="14.0" />
          </font>
       </Label>
-      <TextArea layoutX="158.0" layoutY="128.0" prefHeight="103.0" prefWidth="200.0" />
+      <TextArea fx:id="TaNewProcTime" layoutX="158.0" layoutY="128.0" prefHeight="103.0" prefWidth="200.0" />
       <Label layoutX="14.0" layoutY="240.0" text="Machine assignment(s)">
          <font>
             <Font size="14.0" />
          </font>
       </Label>
-      <TextArea layoutX="158.0" layoutY="240.0" prefHeight="103.0" prefWidth="200.0" />
-      <Button layoutX="156.0" layoutY="352.0" mnemonicParsing="false" text="Add Job">
+      <TextArea fx:id="TaNewMachineAssignment" layoutX="158.0" layoutY="240.0" prefHeight="103.0" prefWidth="200.0" />
+      <Button fx:id="btnAddJob" layoutX="156.0" layoutY="352.0" mnemonicParsing="false" onAction="#handleNewJob" text="Add Job">
          <font>
             <Font size="14.0" />
          </font>

@@ -48,6 +48,8 @@ import javafx.scene.control.ProgressBar;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 import javafx.stage.Window;
+import jss.Job;
+import jss.Operation;
 /**
  *
  * @author Irvan Hardyanto
@@ -64,6 +66,9 @@ public class FXMLDocumentController implements Initializable {
     private GraphicsContext conSchedule;
     private Problem problem;
     private String[] statusColor;
+    private Parent addNewJobLayout;
+    private int jobId;
+    private SchedulerMonitor monitor;
 
     private Schedule bestSchedule;
     
@@ -174,66 +179,20 @@ public class FXMLDocumentController implements Initializable {
                 float mProb = Float.parseFloat(this.mutationProb.getText().trim());
                 int gen = Integer.parseInt(this.genCount.getText().trim());
                 int popSize =Integer.parseInt(strPopSize);
+                
+                this.monitor = new SchedulerMonitor(problem, popSize, cProb, mProb, gen);
                 //this.executeGAHH(this.problem,popSize,cProb,mProb,gen);
                 //GAHHService service = new GAHHService(popSize, gen, cProb, mProb, problem);
                 
-                this.service.setParam(popSize, gen, cProb, mProb, problem);
-                if(!this.service.isRunning()){
-                    this.service.start();
-                }else{
-                    System.out.println("Service is still running!");
-                }
+//                this.service.setParam(popSize, gen, cProb, mProb, problem);
+//                if(!this.service.isRunning()){
+//                    this.service.start();
+//                }else{
+//                    System.out.println("Service is still running!");
+//                }
             }
         }
 
-    }
-    
-    private void executeGAHH(Problem problem,int populationSize,float crossoverProb, float mutationProb,int maxGeneration){
-        System.out.println("GAHH initiated with following parameter");
-        System.out.println("population size: "+populationSize);
-        System.out.println("generation count: "+maxGeneration);
-        System.out.println("----------------------------------------");
-         this.gahh = new GAHH(problem,populationSize,crossoverProb,mutationProb,maxGeneration);
-         
-         long start = System.currentTimeMillis();
-        Population population = this.gahh.initPopulation(problem.getJmlJob()*problem.getJmlMesin());
-        System.out.println(population.toString());
-        this.gahh.evalPopulation(population);
-        
-        int generation = 1;
-        
-        while(!gahh.isTerminationConditionMet(population)){
-            this.gahh.increaseGeneration();
-            System.out.println("-------------------------------------");
-            System.out.println("Currentgeneration: "+generation);
-            
-            Individual best = population.getFittest(0);
-            System.out.println("Best fitness is: "+best.getFitness());
-            
-            System.out.println(population.toString());
-            
-            System.out.println("Selection + Crossover applied");
-            population = gahh.onePointCrossover(population);
-            
-            System.out.println(population.toString());
-            
-            System.out.println("Mutation applied");
-            population = gahh.mutatePopulation(population);
-            System.out.println(population.toString());
-            
-            System.out.println("evaluating current population");
-            this.gahh.evalPopulation(population);
-            System.out.println(population.toString());
-            
-            
-            generation++;
-            System.out.println("---------------------------------------");
-        }
-        Individual bestIndividual = population.getFittest(0);
-        this.textAreaSchedule.setText(bestIndividual.getSchedule()+"");
-        System.out.println("best fitness: "+bestIndividual.getFitness());
-        System.out.println("prcess take: "+(System.currentTimeMillis()-start));
-        this.labelDuration.setText("Total time ellapsed: "+(System.currentTimeMillis()-start)+" ms");
     }
 
     public void generateGanttChart(){
@@ -327,20 +286,24 @@ public class FXMLDocumentController implements Initializable {
         }
     }
     @FXML
-    public void handleAddNewJob(ActionEvent event){
-        try{
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("AddNewJob.fxml"));
-        Parent root = loader.load();
-        Scene s = new Scene(root);
+    public void showAddNewJobDialog(ActionEvent event){
+        Scene s = new Scene(this.addNewJobLayout);
         Stage stage = new Stage();
         stage.setScene(s);
         stage.setTitle("Add New Job");
         stage.show();
-        }catch(IOException e){
-            e.printStackTrace();
-        }
     }
     
+    /*
+    * Method untuk menambahkan job baru 
+    */
+    public void addNewJob(String[][] data,int jobNum){
+        //baris ke 0, release date
+        //baris ke 1, due date
+        //baris ke 2, proc time
+        //baris ke 3, machine assignment
+        
+    }
     private String getFileExtension(File f){
         int offset = f.getPath().lastIndexOf(".");
         return f.getPath().substring(offset);
@@ -348,6 +311,15 @@ public class FXMLDocumentController implements Initializable {
     
     @Override
     public void initialize(URL url, ResourceBundle rb) {
+        try{
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("AddNewJob.fxml"));
+            this.addNewJobLayout = loader.load();
+            ControllerMediator.getInstance().registerController1(this);
+            ControllerMediator.getInstance().registerController2(loader.getController());
+        }catch(IOException e){
+            e.printStackTrace();
+        }
+        this.jobId=1;
         this.problem = null;
         this.conMachine = this.cnvMachine.getGraphicsContext2D();
         this.conSchedule = this.cnvSchedule.getGraphicsContext2D();

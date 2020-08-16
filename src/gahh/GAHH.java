@@ -1,6 +1,5 @@
 package gahh;
 
-import jss.*;
 import java.util.Arrays;
 import java.util.Random;
 
@@ -17,17 +16,15 @@ public class GAHH {
     private int tournamentSize;
     private float crossoverProb;
     private float mutationProb;
-    private Problem problem;
     private ScheduleGenerator scheduleGenerator;
 
-    public GAHH(Problem problem, int populationSize, float crossoverProb, float mutationProb, int maximumGeneration) {
+    public GAHH(ScheduleGenerator scheduleGenerator,int populationSize, float crossoverProb, float mutationProb, int maximumGeneration) {
         this.populationSize = populationSize;
         this.elitismCount = populationSize / 4;
         this.tournamentSize = populationSize / 4;//kalau terlalu tinggi, loss diversity, kalo terlalu rendah: slow convergence
         this.crossoverProb = crossoverProb;
         this.mutationProb = mutationProb;
-        this.problem = problem;
-        this.scheduleGenerator = new ScheduleGenerator(problem);
+        this.scheduleGenerator = scheduleGenerator;
         this.currentGeneration = 0;
         this.maximumGeneration = maximumGeneration;
     }
