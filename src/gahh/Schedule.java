@@ -35,6 +35,10 @@ public class Schedule {
         public int getProcessingTime(){
             return this.finishTime-this.startTime;
         }
+        
+        public int getOperationId(){
+            return this.operationId;
+        }
     }
     private ArrayList<Node>[] schedule;
     private HashMap<Integer,Pair<Integer,Integer>> address;
@@ -50,6 +54,7 @@ public class Schedule {
         this.makespan = 0;
         this.meanTardiness = 0.0;
         this.setupTime = null;
+        this.address=new HashMap<>();
     }
 
     public void setMeanTardiness(double meanTardiness){
@@ -97,6 +102,11 @@ public class Schedule {
         return this.schedule[tmp.getKey()].get(tmp.getValue()).finishTime;
     }
     
+    public int getStartTime(int oprId){
+        Pair<Integer,Integer> tmp = this.getAddress(oprId);
+        return this.schedule[tmp.getKey()].get(tmp.getValue()).startTime;
+    }
+    
     //TODO!! update address
     public void combine(int time,Schedule otherSchedule){
         //gabungkan jadwal ini dengan jadwal lain;
@@ -136,6 +146,8 @@ public class Schedule {
            //newSchedule[i].addAll(otherSchedule.schedule[i]);
         }
             this.schedule=newSchedule;
+            this.makespan = otherSchedule.makespan;
+            this.meanTardiness = otherSchedule.meanTardiness;
         }
     }
     

@@ -30,13 +30,20 @@ import java.util.ArrayList;
 import gahh.Schedule.Node;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 import javafx.collections.FXCollections;
 import javafx.concurrent.Worker;
 import javafx.concurrent.Worker.State;
 import javafx.concurrent.WorkerStateEvent;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import javafx.application.Platform;
+import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Insets;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
@@ -45,9 +52,16 @@ import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.control.TableCell;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.CornerRadii;
 import javafx.scene.paint.Color;
 import javafx.stage.Window;
+import javafx.util.Pair;
 import jss.Job;
 import jss.Operation;
 /**
@@ -67,13 +81,22 @@ public class FXMLDocumentController implements Initializable {
     private Problem problem;
     private String[] statusColor;
     private Parent addNewJobLayout;
+    private Stage addNewJobStage;
     private int jobId;
+    private int threadId;
     private SchedulerMonitor monitor;
+    private ExecutorService executor;
 
     private Schedule bestSchedule;
     
     @FXML
     private Label labelDuration;
+    
+    @FXML
+    private Label lblMakespan;
+    
+    @FXML
+    private Label lblMeanTardiness;
     
     @FXML
     private Button btnBrowseFile;
@@ -91,7 +114,10 @@ public class FXMLDocumentController implements Initializable {
     private Button btnNewJobDialog;
     
     @FXML
-    private TableView<String> jobDataTable;
+    private TableView<TableContent> jobDataTable;
+    
+    @FXML
+    private TableView<ScheduleLegend>tableJob;
     
     @FXML
     private TextField filePathTextField;
@@ -107,9 +133,6 @@ public class FXMLDocumentController implements Initializable {
     
     @FXML
     private TextField popSize;
-    
-    @FXML
-    private TextArea textAreaSchedule;
     
     @FXML
     private ProgressBar progress;
@@ -131,13 +154,22 @@ public class FXMLDocumentController implements Initializable {
         
         if(this.inputFile != null){
             this.filePathTextField.setText(this.inputFile.getPath());
+            this.problem = new Problem();
+            long start = System.currentTimeMillis();
+            problem.readProblem(this.inputFile.getPath());
+            HashMap<Integer,Job> jobs=this.problem.getJobMap();
+            ObservableList<TableContent> tableContent = FXCollections.observableArrayList();
+            for (Map.Entry<Integer,Job> entry: jobs.entrySet()) {
+                tableContent.add(new TableContent(entry.getKey(),entry.getValue().getReleaseDate(),entry.getValue().getDueDate(),entry.getValue().getOperationNum()));
+            }
+            
+            this.jobDataTable.setItems(tableContent);
         }     
     }
     
     @FXML
     private void handleGenerateScheduleClick(ActionEvent event){
-        this.service.reset();
-        this.textAreaSchedule.clear();
+        //this.service.reset();
         this.labelDuration.setText("GAHH process started");
         if(this.inputFile==null){
            this.noFileSelectedAlert.show();
@@ -146,9 +178,7 @@ public class FXMLDocumentController implements Initializable {
         }else{
             //TODO
             //Baca problem nya...
-            this.problem = new Problem();
-            long start = System.currentTimeMillis();
-            problem.readProblem(this.inputFile.getPath());
+            
 
             String strCProb = this.crossoverProb.getText().trim();
             String strMProb = this.mutationProb.getText().trim();
@@ -180,7 +210,12 @@ public class FXMLDocumentController implements Initializable {
                 int gen = Integer.parseInt(this.genCount.getText().trim());
                 int popSize =Integer.parseInt(strPopSize);
                 
-                this.monitor = new SchedulerMonitor(problem, popSize, cProb, mProb, gen);
+                this.monitor = new SchedulerMonitor(problem,this.progress,this.labelDuration, popSize, cProb, mProb, gen);
+                //jalankan task awal
+                this.threadId = 1;
+                GAHHThread initialThread = new GAHHThread(monitor, this.threadId, 0);
+                this.threadId++;
+                this.executor.execute(initialThread);
                 //this.executeGAHH(this.problem,popSize,cProb,mProb,gen);
                 //GAHHService service = new GAHHService(popSize, gen, cProb, mProb, problem);
                 
@@ -194,74 +229,67 @@ public class FXMLDocumentController implements Initializable {
         }
 
     }
-
-    public void generateGanttChart(){
-        Schedule sch = this.service.getValue();
-        this.getGanttChart(sch, this.problem);
-        String[] row;
-        String[] col;
-        if(this.textAreaSchedule.getText()!=null){
-            String sched = this.textAreaSchedule.getText();
-            row = sched.split("\n");
-            
-            String[] machines = new String[row.length-2];
-            for (int i = 0; i < machines.length; i++) {
-                machines[i] = "Machine "+(i+1);
-            }
-            
-            final NumberAxis xAxis = new NumberAxis();
-            final CategoryAxis yAxis = new CategoryAxis();
-
-            final GanttChart<Number,String> chart = new GanttChart<Number,String>(xAxis,yAxis);
-            
-            xAxis.setLabel("");
-            xAxis.setTickLabelFill(Color.CHOCOLATE);
-            xAxis.setMinorTickCount(4);
-            
-            yAxis.setLabel("");
-            yAxis.setTickLabelFill(Color.CHOCOLATE);
-            yAxis.setTickLabelGap(5);
-            yAxis.setCategories(FXCollections.<String>observableArrayList(Arrays.asList(machines)));
-
-            chart.setTitle("Gantt chart Jadwal");
-            chart.setLegendVisible(false);
-            chart.setBlockHeight( 40);
-            String machine;
-            
-            for(int i =0;i<row.length-2;i++){
-                machine = machines[i];
-                XYChart.Series series = new XYChart.Series();
-                col = row[i].split("\\s+");
-                for(int j = 0 ; j < col.length;j++){
-                    String[] tmp = col[j].replaceAll("\\(","").replaceAll("\\)", "").split(",");
-                    int startTime = Integer.parseInt(tmp[0]);
-                    String id = tmp[1];
-                    int endTime = Integer.parseInt(tmp[2]);
-                    series.getData().add(new XYChart.Data(startTime,machine,new ExtraData(endTime-startTime,this.statusColor[Integer.parseInt(id)/machines.length],id)));
-                }
-                chart.getData().add(series);
-            }
-            
-            chart.getStylesheets().add(getClass().getResource("ganttchart.css").toExternalForm());
-            
-
-            Scene scene = new Scene(chart, 1500, 1000); 
-            Stage stage = new Stage(); 
-            stage.setScene(scene); 
-            stage.show();
-        }
+    
+    /**
+     * referensi: http://tutorials.jenkov.com/javafx/tableview.html#customer-cell-rendering
+     * https://code.makery.ch/blog/javafx-8-tableview-cell-renderer/
+     */
+    public void initScheduleLegendTable(){
+        TableColumn<ScheduleLegend, Integer> column1 = new TableColumn<>("Job Id");
+        column1.setCellValueFactory(new PropertyValueFactory<>("jobId"));
+        
+        TableColumn<ScheduleLegend, Color> column2 = new TableColumn<>("Color");
+        column2.setCellValueFactory(new PropertyValueFactory<>("color"));
+        column2.setCellFactory(tableColumn->{
+            TableCell<ScheduleLegend,Color> tableCell = new TableCell<ScheduleLegend,Color>(){
+                 protected void updateItem(Color item,boolean empty){
+                     super.updateItem(item, empty);
+                    if(empty || item ==null){
+                     this.setText(null);
+                    this.setGraphic(null);
+                    this.setBackground(null);
+                    }else{
+                        this.setBackground(new Background(new BackgroundFill(item, CornerRadii.EMPTY, Insets.EMPTY)));
+                    }
+                 }
+            };
+            //tableCell.updateTableColumn(tableColumn);
+            return tableCell;
+        });
+        
+        TableColumn<ScheduleLegend, Integer> column3 = new TableColumn<>("Release Date");
+        column3.setCellValueFactory(new PropertyValueFactory<>("releaseDate"));
+        
+        TableColumn<ScheduleLegend, Integer> column4 = new TableColumn<>("Due Date");
+        column4.setCellValueFactory(new PropertyValueFactory<>("dueDate"));
+        
+        TableColumn<ScheduleLegend, Integer> column5 = new TableColumn<>("Finish Time");
+        column5.setCellValueFactory(new PropertyValueFactory<>("finishTime"));
+        
+        TableColumn<ScheduleLegend, Integer> column6 = new TableColumn<>("Tardiness");
+        column6.setCellValueFactory(new PropertyValueFactory<>("tardiness"));
+        
+        this.tableJob.getColumns().add(column1);
+        this.tableJob.getColumns().add(column2);
+        this.tableJob.getColumns().add(column3);
+        this.tableJob.getColumns().add(column4);
+        this.tableJob.getColumns().add(column5);
+        this.tableJob.getColumns().add(column6);
     }
     
     /**
      * Method ini berfungsi untuk menggambar gantt chart pada canvas
      * @author: Irvan Hardyanto, dengan referensi dari dokumen skripsi "Pembangunan Simulator Penjadwalan Flow Shop"
      */
-    private void getGanttChart(Schedule sch,Problem prob){
+    public void getGanttChart(Schedule sch,Problem prob){
         int makespan = sch.getMakespan();
         int jmlMesin = sch.getJmlMesin();
         
         double cnvScheduleWidth = this.cnvSchedule.getWidth();
         double cnvScheduleHeight = this.cnvSchedule.getHeight();
+        
+        this.conSchedule.clearRect(0, 0, cnvScheduleWidth, cnvScheduleHeight);
+        this.conMachine.clearRect(0,0,this.cnvMachine.getWidth(),this.cnvMachine.getHeight());
         
         double x = 0;
         double y = 0;
@@ -273,7 +301,7 @@ public class FXMLDocumentController implements Initializable {
             ArrayList<Schedule.Node> machineSequence = arr[i];
             
             for (Schedule.Node node: machineSequence) {
-                int jobId = node.getOperationIdx()/jmlMesin;
+                int jobId = prob.getOperation(node.getOperationId()).getJobId();
                 
                 x = node.getStartTime()*(cnvScheduleWidth/makespan*1.0);
                 blockWidth = node.getProcessingTime()*(cnvScheduleWidth/makespan*1.0);
@@ -284,14 +312,29 @@ public class FXMLDocumentController implements Initializable {
             y += blockHeight;
             this.conMachine.fillText("Machine: "+(i+1), 0, y-(blockHeight/2));
         }
+        Platform.runLater(new Runnable(){
+                    public void run(){
+                        lblMakespan.setText(sch.getMakespan()+"");
+                        lblMeanTardiness.setText(sch.getMeanTardiness()+"");
+                    }
+                });
+        
+        this.updateTableLegend(sch, prob);
+    }
+    
+    public void updateTableLegend(Schedule sch,Problem prob){
+        this.tableJob.getItems().clear();
+        ObservableList<ScheduleLegend> item = FXCollections.observableArrayList();
+        for(Map.Entry<Integer,Job> entry: prob.getJobMap().entrySet()){
+            Job currJob = entry.getValue();
+            int oprNum = currJob.getOperationNum();
+            item.add(new ScheduleLegend(entry.getKey(), currJob.getReleaseDate(), currJob.getDueDate(), currJob.getColor(), sch.getFinishTime(currJob.getOperationIdx(oprNum-1))));
+        }
+        this.tableJob.getItems().addAll(item);
     }
     @FXML
     public void showAddNewJobDialog(ActionEvent event){
-        Scene s = new Scene(this.addNewJobLayout);
-        Stage stage = new Stage();
-        stage.setScene(s);
-        stage.setTitle("Add New Job");
-        stage.show();
+        this.addNewJobStage.show();
     }
     
     /*
@@ -302,7 +345,47 @@ public class FXMLDocumentController implements Initializable {
         //baris ke 1, due date
         //baris ke 2, proc time
         //baris ke 3, machine assignment
-        
+        if(this.threadId==1){
+            this.gahhParamAlert.setContentText("Error! tombol start scheduling belum ditekan!");
+            this.gahhParamAlert.show();
+        }else{
+            //masalah baru, release date nya ngacak.
+            //perbaikin programnya atau buat asumsi si user nge input nya ga bakal random
+            //this.monitor.reschedule(Integer.parseInt(data[0][0]), data);
+            this.executor.execute(new SetupThread(monitor, this.threadId, Integer.parseInt(data[0][0]), data));
+            this.threadId++;
+            
+            HashMap<Integer,Job> tmp = this.monitor.getProblem().getJobMap();
+            this.jobDataTable.getItems().clear();
+            ObservableList<TableContent> tableContent = FXCollections.observableArrayList();
+            for (Map.Entry<Integer,Job> entry: tmp.entrySet()) {
+                tableContent.add(new TableContent(entry.getKey(),entry.getValue().getReleaseDate(),entry.getValue().getDueDate(),entry.getValue().getOperationNum()));
+            }
+            
+            this.jobDataTable.setItems(tableContent);
+            
+            GAHHThread rescheduleThread = new GAHHThread(monitor, this.threadId,Integer.parseInt(data[0][0]));
+            this.threadId++;
+            this.executor.execute(rescheduleThread);
+            ControllerMediator.getInstance().clearAll();
+        }
+    }
+    
+    @FXML
+    public void handleButtonStop(ActionEvent event){
+        this.threadId=1;
+        executor.shutdown();  
+        while (!executor.isTerminated()) {   }
+        this.executor = Executors.newFixedThreadPool(5);
+        this.progress.setProgress(0.0);
+        this.labelDuration.setText("Ready");
+    }
+    
+    //dipanggil saat stage(window) ditutup
+    //bersihkan semua thread yang masih jalan
+    public void onStop(){
+        executor.shutdown();  
+        while (!executor.isTerminated()) {   }  
     }
     private String getFileExtension(File f){
         int offset = f.getPath().lastIndexOf(".");
@@ -327,9 +410,22 @@ public class FXMLDocumentController implements Initializable {
         this.noFileSelectedAlert =new Alert(Alert.AlertType.ERROR, "No file selected!", ButtonType.CLOSE);
         this.fileFormatAlert =new Alert(Alert.AlertType.ERROR, "Wrong file format!", ButtonType.CLOSE);
         this.gahhParamAlert = new Alert(Alert.AlertType.ERROR);
+        this.executor = Executors.newFixedThreadPool(5);
         this.service = new GAHHService();
-        this.service.setOnSucceeded(new GAHHServiceSucceededHandler(this.textAreaSchedule));
-        this.service.setOnRunning(new GAHHServiceRunningHandler(this.progress));
+        
+        this.jobDataTable.getColumns().get(0).setCellValueFactory(new PropertyValueFactory<>("jobId"));
+        this.jobDataTable.getColumns().get(1).setCellValueFactory(new PropertyValueFactory<>("releaseDate"));
+        this.jobDataTable.getColumns().get(2).setCellValueFactory(new PropertyValueFactory<>("dueDate"));
+        this.jobDataTable.getColumns().get(3).setCellValueFactory(new PropertyValueFactory<>("oprNum"));
+         
+        Scene s = new Scene(this.addNewJobLayout);
+        this.addNewJobStage = new Stage();
+        this.addNewJobStage.setScene(s);
+        this.addNewJobStage.setTitle("Add New Job");
+        this.labelDuration.setText("Ready");
+        
+        this.initScheduleLegendTable();
+        
         this.statusColor = new String[15];
         this.statusColor[0] = "status-red";
         this.statusColor[1] = "status-light-red";

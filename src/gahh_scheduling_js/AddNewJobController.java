@@ -77,6 +77,12 @@ public class AddNewJobController implements Initializable{
         }
     }
     
+    public void clearAll(){
+        this.TaNewMachineAssignment.clear();
+        this.TaNewProcTime.clear();
+        this.TfNewDueDate.clear();
+        this.TfNewReleaseDate.clear();
+    }
     private boolean checkArray(int[] arr){
          int len=arr[0];
             for (int i = 1; i < arr.length; i++) {

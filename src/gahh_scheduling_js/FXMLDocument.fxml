@@ -9,7 +9,6 @@
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
-<?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.Region?>
@@ -41,7 +40,7 @@
                                  </font>
                               </Button>
                               <Button fx:id="btnNewJobDialog" layoutX="67.0" layoutY="219.0" mnemonicParsing="false" onAction="#showAddNewJobDialog" prefHeight="35.0" prefWidth="168.0" text="Add New Job" />
-                              <Button fx:id="btnStopScheduling" layoutX="67.0" layoutY="263.0" mnemonicParsing="false" prefHeight="35.0" prefWidth="168.0" style="-fx-background-color: rgb(255,0,0);" text="Stop Scheduling" textFill="WHITE" />
+                              <Button fx:id="btnStopScheduling" layoutX="67.0" layoutY="263.0" mnemonicParsing="false" onAction="#handleButtonStop" prefHeight="35.0" prefWidth="168.0" style="-fx-background-color: rgb(255,0,0);" text="Stop Scheduling" textFill="WHITE" />
                            </children>
                         </Group>
                         <Group layoutX="104.0" layoutY="99.0">
@@ -80,10 +79,13 @@
                <content>
                   <AnchorPane prefHeight="200.0" prefWidth="200.0">
                      <children>
-                        <TextArea fx:id="textAreaSchedule" layoutX="14.0" layoutY="20.0" prefHeight="136.0" prefWidth="279.0" />
-                        <Button fx:id="btnGant" layoutX="14.0" layoutY="167.0" mnemonicParsing="false" onAction="#generateGanttChart" text="View Gantt Chart" />
-                        <Canvas fx:id="cnvSchedule" height="458.0" layoutX="121.0" layoutY="200.0" width="762.0" />
-                        <Canvas fx:id="cnvMachine" height="458.0" layoutX="43.0" layoutY="200.0" width="77.0" />
+                        <Canvas fx:id="cnvSchedule" height="308.0" layoutX="138.0" layoutY="53.0" width="748.0" />
+                        <Canvas fx:id="cnvMachine" height="308.0" layoutX="61.0" layoutY="53.0" width="77.0" />
+                        <TableView fx:id="tableJob" layoutX="214.0" layoutY="442.0" prefHeight="200.0" prefWidth="472.0" />
+                        <Label layoutX="375.0" layoutY="384.0" prefHeight="17.0" prefWidth="95.0" text="Makespan           :" />
+                        <Label layoutX="375.0" layoutY="412.0" prefHeight="17.0" prefWidth="96.0" text="Mean Tardiness  :" />
+                        <Label fx:id="lblMakespan" layoutX="477.0" layoutY="384.0" prefHeight="17.0" prefWidth="85.0" />
+                        <Label fx:id="lblMeanTardiness" layoutX="477.0" layoutY="412.0" prefHeight="17.0" prefWidth="85.0" />
                      </children>
                   </AnchorPane>
                </content>

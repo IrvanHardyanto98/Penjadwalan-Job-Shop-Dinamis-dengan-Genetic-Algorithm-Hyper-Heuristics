@@ -31,7 +31,7 @@ public class GAHHTask extends Task<Schedule>{
     @Override
     protected Schedule call() throws Exception {
         long start = System.currentTimeMillis();
-        Population population = this.gahh.initPopulation(problem.getJmlJob()*problem.getJmlMesin());
+        Population population = this.gahh.initPopulation();
         System.out.println(population.toString());
         this.gahh.evalPopulation(population);
         

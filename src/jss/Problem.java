@@ -80,9 +80,17 @@ public class Problem{
             this.remainingOpr.put(jobId, remainingOpr);
         }
         
+        public void setJmlJob(int jmlJob){
+            this.jmlJob = jmlJob;
+        }
+                    
 	public int getJmlJob(){
 		return this.jmlJob;
 	}
+        
+        public void setJmlMesin(int jmlMesin){
+            this.jmlMesin= jmlMesin;
+        }
 	
 	public int getJmlMesin(){
 		return this.jmlMesin;
@@ -140,7 +148,7 @@ public class Problem{
         //Tambahin jobFinishTime setiapJob yang belum beres
         public Problem reschedule(int time,String[][] data){            
             HashSet<Integer> tmp = this.bestSchedule.getRemainingOperation(time);
-            
+            System.out.println("REmaining operations is: "+tmp.toString());
             Problem subProblem = new Problem();
             int[] setupTime=this.bestSchedule.getSetupTime();
             subProblem.setSetupTime(setupTime);
@@ -150,7 +158,7 @@ public class Problem{
             //ada kemungkinan job yang sudah beres semua operasi nya di iterasi.
             for (Map.Entry<Integer,Job> entry: this.jobMap.entrySet()) {
                 Job oldJob = entry.getValue();
-                Job newJob = new Job(oldJob.getReleaseDate(), oldJob.getDueDate(), oldJob.getOperationNum());           
+                Job newJob = new Job(this.countReleaseDate(oldJob, time), oldJob.getDueDate(), oldJob.getOperationNum());           
                 boolean finished = true;
                 int remOpr = oldJob.getOperationNum();
                 int newReleaseDate= 0;
@@ -176,8 +184,6 @@ public class Problem{
                     }
                 }
                 if(!finished){
-                    //tambahkan job dan operation ke sub problem
-                    //hitung release date baru
                     subProblem.addJob(entry.getKey(), newJob);
                 }
                 subProblem.setRemainingOpr(entry.getKey(), remOpr);
@@ -197,7 +203,7 @@ public class Problem{
                 for(int j = 0 ;j < splitProcTimes.length;j++){
                     int oprId = jobId+j;
                     int procTime = Integer.parseInt(splitProcTimes[j]);
-                    int machineId = Integer.parseInt(splitMachineAssignment[j]);
+                    int machineId = Integer.parseInt(splitMachineAssignment[j])-1;
                     
                     Operation newOperation = new Operation(jobId, oprId, procTime, machineId);
                     
@@ -213,7 +219,23 @@ public class Problem{
                 subProblem.setJobFinishTime(jobId,0);
                 this.addJob(jobId, newJob);
             }
+            System.out.println("jobMap: "+subProblem.getJobMap().toString());
+            System.out.println("opMap: "+subProblem.getOpMap().toString()+" SIZE: "+subProblem.getOpMap().size());
+            subProblem.setJmlJob(this.jmlJob);
+            subProblem.setJmlMesin(this.jmlMesin);
             return subProblem;
+        }
+        
+        private int countReleaseDate(Job job,int time){
+            int releaseDate = 0;
+            for(int i=0;i<job.getOperationNum();i++){
+                int oprId = job.getOperationIdx(i);
+                if(this.bestSchedule.getStartTime(oprId)<time){
+                    int max =Math.max(releaseDate,this.bestSchedule.getFinishTime(oprId));
+                    releaseDate = max;
+                }
+            }
+            return releaseDate;
         }
         //method ini hanya dipanggil sekali di awal !
 	public void readProblem(String fileName){

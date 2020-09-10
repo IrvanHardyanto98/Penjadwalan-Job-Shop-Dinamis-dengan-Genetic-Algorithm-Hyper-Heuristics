@@ -10,6 +10,9 @@ import gahh.Individual;
 import gahh.Population;
 import gahh.Schedule;
 import gahh.ScheduleGenerator;
+import javafx.application.Platform;
+import javafx.scene.control.Label;
+import javafx.scene.control.ProgressBar;
 import jss.Problem;
 
 /**
@@ -19,21 +22,25 @@ import jss.Problem;
 public class SchedulerMonitor {
 
     private volatile int threadId;
-    private Problem problem;
-    private GAHH gahh;
+    private volatile Problem problem;
+    private volatile GAHH gahh;
+    private ProgressBar progress;
+    private Label labelDuration;
 
-    public SchedulerMonitor(Problem problem, int populationSize, float crossoverProb, float mutationProb, int maxGeneration) {
+    public SchedulerMonitor(Problem problem,ProgressBar progress, Label labelDuration, int populationSize, float crossoverProb, float mutationProb, int maxGeneration) {
         this.threadId = 1;
         this.problem = problem;
         this.gahh = new GAHH(new ScheduleGenerator(problem), populationSize, crossoverProb, mutationProb, maxGeneration);
+        this.progress = progress;
+        this.labelDuration = labelDuration;
     }
-
-    public void createInitialSchedule() {
-
+    
+    public void updateProgress(double progress){
+        this.progress.setProgress(progress);
     }
-
-    public void reschedule(int time, String[][] data) {
-
+    
+    public void updateLabel(String message){
+        this.labelDuration.setText(message);
     }
 
     public Schedule getSchedule() {
@@ -42,6 +49,13 @@ public class SchedulerMonitor {
 
     public void setSchedule(Schedule schedule) {
         this.problem.setBestSchedule(schedule);
+    }
+    
+    public void combineSchedule(int time,Schedule schedule){
+        //jangan lupa update makespan dan mean tardiness
+        System.out.println("best Schedule: "+this.problem.getBestSchedule());
+        this.problem.getBestSchedule().combine(time, schedule);
+        System.out.println("FINAL SCHEDULE: "+this.problem.getBestSchedule());
     }
 
     public Problem getProblem() {
@@ -67,72 +81,9 @@ public class SchedulerMonitor {
     public GAHH getGAHHInstance() {
         return this.gahh;
     }
-
-}
-
-//thread untuk schedule dan reschedule
-class GAHHThread implements Runnable {
-
-    private SchedulerMonitor monitor;
-    private int id;
-
-    public GAHHThread(SchedulerMonitor monitor, int id) {
-        this.monitor = monitor;
-        this.id = id;
-    }
-
-    @Override
-    public void run() {
-        synchronized (this.monitor) {
-            try {
-                while (this.monitor.getThreadId() != id) {
-                    this.monitor.wait();
-                }
-                long start = System.currentTimeMillis();
-                GAHH gahh = this.monitor.getGAHHInstance();
-                Population population = gahh.initPopulation(this.monitor.getProblem().getOpMap().size());
-                //System.out.println(population.toString());
-                gahh.evalPopulation(population);
-                while (!gahh.isTerminationConditionMet(population)) {
-                    gahh.increaseGeneration();
-                    //System.out.println("-------------------------------------");
-                    //System.out.println("Currentgeneration: " + generation);
-
-                    Individual best = population.getFittest(0);
-                    System.out.println("Best fitness is: " + best.getFitness());
-
-                    System.out.println(population.toString());
-
-                    System.out.println("Selection + Crossover applied");
-                    population = gahh.onePointCrossover(population);
-
-                    System.out.println(population.toString());
-
-                    System.out.println("Mutation applied");
-                    population = gahh.mutatePopulation(population);
-                    System.out.println(population.toString());
-
-                    System.out.println("evaluating current population");
-                    gahh.evalPopulation(population);
-                    System.out.println(population.toString());
-
-                    //updateProgress(generation, maxGen);
-                    //generation++;
-                    //System.out.println("---------------------------------------");                    
-                }
-                Individual bestIndividual = population.getFittest(0);
-                //System.out.println("best schedule: "+bestIndividual.getSchedule());
-                if(this.id==1){
-                    this.monitor.setSchedule(bestIndividual.getSchedule());
-                }else{
-                    //gabung jadwal
-                }
-                this.monitor.incrementThreadId();
-                this.monitor.notifyAll();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
+    
+    public void setGAHHInstance(GAHH gahh){
+        this.gahh = gahh;
     }
 
 }

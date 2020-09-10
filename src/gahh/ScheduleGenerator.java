@@ -43,14 +43,18 @@ public class ScheduleGenerator {
         this.machineFinishTime = machineFinishTime;
     }
     
+    public Problem getProblem(){
+        return this.problem;
+    }
+    
     public Schedule generateSchedule(Individual individual) {  
-        System.out.println("generate schedule start");
+        //System.out.println("generate schedule start");
         //this.schedule = new Node[this.problem.getJmlMesin()][this.problem.getJmlJob()];
         int jobNum = this.problem.getJmlJob();
         int machineNum = this.problem.getJmlMesin();
         
-        System.out.println("jml job:"+ jobNum);
-        System.out.println("machineNum :"+ machineNum);
+        //System.out.println("jml job:"+ jobNum);
+        //System.out.println("machineNum :"+ machineNum);
         
         Schedule schedule = new Schedule(machineNum);
 
@@ -59,7 +63,7 @@ public class ScheduleGenerator {
         ArrayList<Integer> chromosome = individual.getChromosome();
         
         this.jobFinishTime = new HashMap<>(this.problem.getJobFinishTime());
-        this.machineFinishTime = this.problem.getSetupTime();
+        this.machineFinishTime = Arrays.copyOf(this.problem.getSetupTime(), this.problem.getSetupTime().length);
         HashMap<Integer,Integer> remainingOperation = new HashMap<>(this.problem.getRemainingOpr());
         
         //cari operation yang schedulable
@@ -70,7 +74,7 @@ public class ScheduleGenerator {
         //sehingga baris ini mengalami perubahan
         
         //Pastikan panjang kromosom == jmlOperation yg ada!
-        System.out.println("loop outer start");
+        //System.out.println("loop outer start");
         for (int i = 0; i < individual.getChromosomeLength(); i++) {
             int currLLH = individual.getGene(i);
             
@@ -92,9 +96,9 @@ public class ScheduleGenerator {
 //                    schedulableOperations.add(opr);
 //                }
             }
-            System.out.println("sort schedulable start");
-            llh.orderOperation(schedulableOperations, this.problem.getJobMap(), currLLH);
-            System.out.println("sort schedulable done");
+            //System.out.println("sort schedulable start");
+            llh.orderOperation(schedulableOperations, this.problem.getJobMap(),this.problem.getOpMap(),this.jobFinishTime,this.machineFinishTime, currLLH);
+            //System.out.println("sort schedulable done");
             Pair<Integer,Operation> currOpr = schedulableOperations.get(0);
             if (!this.put(schedule,currOpr)) {
                 //System.out.println("Warning! Operation : " + currOpr.getOperationId() + " job: " + currOpr.getJobId() + " IS NOT succesfully put into schedule at machine: " + currOpr.getMachineNum());
@@ -108,18 +112,18 @@ public class ScheduleGenerator {
             schedulableOperations.clear();
         }
         
-        System.out.println("outer loop end");
+        //System.out.println("outer loop end");
         //individual.setSchedule(this.toString());
         //System.out.println("Makespan: "+this.getMakespan());
         //System.out.println("Mean tardiness: "+this.getMeanTardiness());
         
         //hitung makespan dan mean tardiness jadwal yang dihasilkan
-        System.out.println("countMkspn start");
+        //System.out.println("countMkspn start");
         int mkspn=this.countMakespan(schedule);
-        System.out.println("countMkspn end");
-        System.out.println("countMt start");
+        //System.out.println("countMkspn end");
+        //System.out.println("countMt start");
         double mt = this.countMeanTardiness(schedule);
-        System.out.println("countMT end");
+        //System.out.println("countMT end");
         schedule.setMakespan(mkspn);
         schedule.setMeanTardiness(mt);
         
@@ -139,7 +143,7 @@ private int countOperationStartTime(Operation opr){
 
     //setiap operation pada job dikerjakan pada machine yang berbeda!
     private boolean put(Schedule schedule,Pair<Integer,Operation> currOpr) {
-        System.out.println("put opr start");
+        //System.out.println("put opr start");
         Operation opr = currOpr.getValue();
         //finish time mencatat waktu selesai setiap operation milik job
         int machineId = opr.getMachineNum();
@@ -159,7 +163,7 @@ private int countOperationStartTime(Operation opr){
             //this.freeCells[machineId]--;
             this.jobFinishTime.replace(jobId,end);
             this.machineFinishTime[machineId] = end;
-            System.out.println("put opr done");
+            //System.out.println("put opr done");
             return schedule.addOperation(oprId,opr, start, end);
         
     }
@@ -182,11 +186,10 @@ private int countOperationStartTime(Operation opr){
     
     private double countMeanTardiness(Schedule schedule){
         int totalTardiness = 0;
-        System.out.println("jobfinishTime.size() = "+this.jobFinishTime.size());
-        for (int i = 0; i < this.jobFinishTime.size(); i++) {
-            System.out.println("i = "+i);
-            totalTardiness += Math.max(0, (this.jobFinishTime.get(i) - this.problem.getJob(i).getDueDate()));
-            System.out.println("done");
+        for (Map.Entry<Integer,Integer> entry : this.jobFinishTime.entrySet()) {
+            //System.out.println("jobId = "+entry.getKey());
+            totalTardiness += Math.max(0, (entry.getValue() - this.problem.getJob(entry.getKey()).getDueDate()));
+            //System.out.println("done");
         }
         return totalTardiness * 1.0 / this.problem.getJmlJob();
     }

@@ -20,10 +20,15 @@ public class GAHH_Scheduling_JS extends Application {
     
     @Override
     public void start(Stage stage) throws Exception {
-        Parent root = FXMLLoader.load(getClass().getResource("FXMLDocument.fxml"));
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("FXMLDocument.fxml"));
+        //Parent root = FXMLLoader.load(getClass().getResource("FXMLDocument.fxml"));
+        Parent root = loader.load();
+        FXMLDocumentController con = loader.getController();
+        
         
         Scene scene = new Scene(root);
         
+        stage.setOnCloseRequest(e -> con.onStop());
         stage.setScene(scene);
         stage.show();
     }

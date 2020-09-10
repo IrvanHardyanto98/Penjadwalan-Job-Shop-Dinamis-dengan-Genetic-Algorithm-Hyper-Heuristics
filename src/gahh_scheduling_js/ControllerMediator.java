@@ -5,6 +5,9 @@
  */
 package gahh_scheduling_js;
 
+import gahh.Schedule;
+import jss.Problem;
+
 /**
  *
  * @author Jim Daehn (Februari 2015) pada situs StackOverflow (https://stackoverflow.com/questions/22178533/communication-between-two-javafx-controllers)
@@ -31,6 +34,14 @@ public class ControllerMediator {
     
     public void addNewJob(String[][] msg,int jobNum){
         this.controller1.addNewJob(msg,jobNum);
+    }
+    
+    public void clearAll(){
+        this.controller2.clearAll();
+    }
+    
+    public void getGanttChart(Schedule sch,Problem prob){
+        this.controller1.getGanttChart(sch,prob);
     }
     
     private ControllerMediator(){}

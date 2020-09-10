@@ -11,7 +11,7 @@ import javafx.util.Pair;
  */
 //low level heuristic yang dinyatakan oleh integer tertentu
 public class LowLevelHeuristic{	
-	public void orderOperation(ArrayList<Pair<Integer,Operation>> operations,HashMap<Integer,Job> jobMap,int llh){
+	public void orderOperation(ArrayList<Pair<Integer,Operation>> operations,HashMap<Integer,Job> jobMap,HashMap<Integer,Operation> opMap,HashMap<Integer, Integer> jobFinishTime, int[] machineFinishTime,int llh){
 		switch(llh){
 			case 1:
 				//System.out.println("Minimum Release Time");
@@ -45,15 +45,39 @@ public class LowLevelHeuristic{
 						return 0;
 					}
 				});
-				break;
+				break;  
+                                
 			case 4:
+                        //case 3:
 				//System.out.println("Earliest Due Date");
 				Collections.sort(operations,new DueDateAscendingComparator(jobMap));
 				break;
+                                
 			case 5:
 				//System.out.println("Latest Due Date");
 				Collections.sort(operations,new DueDateDescendingComparator(jobMap));
 				break;
+                                
+                        case 6:
+                        //case 5:
+                                //MWKR: MostWork Remaining
+                                Collections.sort(operations, new MWKRComparator(jobMap));
+                                break;
+                                
+                        //case 4: 
+                        case 7:
+                                //LWKR: Least Work Remaining
+                                Collections.sort(operations, new LWKRComparator(jobMap));
+                                break;
+                        case 8:
+                        //case 5:
+                                //SRPT: Shortest Remaining Processing Time
+                                Collections.sort(operations, new SRPTComparator(jobMap,opMap));
+                               break;
+                        case 9:
+                                //Minimum slack time
+                                Collections.sort(operations, new MSTComparator(jobMap,opMap,jobFinishTime,machineFinishTime));
+                               break;
 			default:
 				System.out.println("LLH out of range!");
 		}
